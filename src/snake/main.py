@@ -5,7 +5,7 @@ import pygame
 # Window settings
 WIDTH, HEIGHT = 640, 480
 TITLE = "Snake"
-FPS = 30  # render FPS (raised for smoother draw)
+FPS = 30  # render FPS
 BG_COLOR = (20, 20, 20)
 GRID_SIZE = 20  # pixels per cell
 GRID_COLS = WIDTH // GRID_SIZE
@@ -14,6 +14,7 @@ SNAKE_COLOR = (80, 220, 100)
 HEAD_COLOR = (120, 255, 140)
 FOOD_COLOR = (240, 80, 80)
 HUD_COLOR = (230, 230, 230)
+GAME_OVER_COLOR = (255, 90, 90)
 
 # Movement timing (game ticks per second)
 TICKS_PER_SECOND = 8
@@ -27,10 +28,11 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 
-def handle_events(direction):
-    """Process input events; return (keep_running, new_direction)."""
+def handle_events(direction, game_over=False):
+    """Process input events; return (keep_running, new_direction, restart)."""
     new_dir = direction
     keep_running = True
+    restart = False
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -38,25 +40,29 @@ def handle_events(direction):
         elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_ESCAPE, pygame.K_q):
                 keep_running = False
-            # Arrow keys
-            elif event.key == pygame.K_UP:
-                new_dir = choose_direction(new_dir, UP)
-            elif event.key == pygame.K_DOWN:
-                new_dir = choose_direction(new_dir, DOWN)
-            elif event.key == pygame.K_LEFT:
-                new_dir = choose_direction(new_dir, LEFT)
-            elif event.key == pygame.K_RIGHT:
-                new_dir = choose_direction(new_dir, RIGHT)
-            # WASD
-            elif event.key == pygame.K_w:
-                new_dir = choose_direction(new_dir, UP)
-            elif event.key == pygame.K_s:
-                new_dir = choose_direction(new_dir, DOWN)
-            elif event.key == pygame.K_a:
-                new_dir = choose_direction(new_dir, LEFT)
-            elif event.key == pygame.K_d:
-                new_dir = choose_direction(new_dir, RIGHT)
-    return keep_running, new_dir
+            if game_over:
+                if event.key in (pygame.K_r, pygame.K_SPACE, pygame.K_RETURN):
+                    restart = True
+            else:
+                # Arrow keys
+                if event.key == pygame.K_UP:
+                    new_dir = choose_direction(new_dir, UP)
+                elif event.key == pygame.K_DOWN:
+                    new_dir = choose_direction(new_dir, DOWN)
+                elif event.key == pygame.K_LEFT:
+                    new_dir = choose_direction(new_dir, LEFT)
+                elif event.key == pygame.K_RIGHT:
+                    new_dir = choose_direction(new_dir, RIGHT)
+                # WASD
+                elif event.key == pygame.K_w:
+                    new_dir = choose_direction(new_dir, UP)
+                elif event.key == pygame.K_s:
+                    new_dir = choose_direction(new_dir, DOWN)
+                elif event.key == pygame.K_a:
+                    new_dir = choose_direction(new_dir, LEFT)
+                elif event.key == pygame.K_d:
+                    new_dir = choose_direction(new_dir, RIGHT)
+    return keep_running, new_dir, restart
 
 
 def choose_direction(current, attempted):
@@ -95,7 +101,7 @@ def draw_cell(surface, cell, color):
     pygame.draw.rect(surface, color, rect)
 
 
-def render(screen, snake, food, score, font):
+def render(screen, snake, food, score, font, game_over=False):
     screen.fill(BG_COLOR)
     # Draw food
     if food is not None:
@@ -110,7 +116,27 @@ def render(screen, snake, food, score, font):
     hud = font.render(f"Score: {score}", True, HUD_COLOR)
     screen.blit(hud, (8, 6))
 
+    if game_over:
+        over_text = font.render("Game Over - Press R/Enter/Space", True, GAME_OVER_COLOR)
+        rect = over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(over_text, rect)
+
     pygame.display.flip()
+
+
+def init_game_state():
+    # Initialize snake centered, length 4, heading right
+    start_x, start_y = GRID_COLS // 2, GRID_ROWS // 2
+    snake = [
+        (start_x, start_y),
+        (start_x - 1, start_y),
+        (start_x - 2, start_y),
+        (start_x - 3, start_y),
+    ]
+    direction = RIGHT
+    food = spawn_food(set(snake))
+    score = 0
+    return snake, direction, food, score
 
 
 def main() -> int:
@@ -121,39 +147,37 @@ def main() -> int:
         clock = pygame.time.Clock()
         font = pygame.font.SysFont(None, 24)
 
-        # Initialize snake centered, length 4, heading right
-        start_x, start_y = GRID_COLS // 2, GRID_ROWS // 2
-        snake = [
-            (start_x, start_y),
-            (start_x - 1, start_y),
-            (start_x - 2, start_y),
-            (start_x - 3, start_y),
-        ]
-        direction = RIGHT
-
-        # Food and score
-        food = spawn_food(set(snake))
-        score = 0
+        snake, direction, food, score = init_game_state()
+        game_over = False
 
         # Timed movement
         pygame.time.set_timer(MOVE_EVENT, MOVE_INTERVAL_MS)
 
         running = True
         while running:
-            running, direction = handle_events(direction)
+            running, direction, restart = handle_events(direction, game_over)
+            if restart and game_over:
+                snake, direction, food, score = init_game_state()
+                game_over = False
 
             # Tick-based update
             for event in pygame.event.get([MOVE_EVENT]):
-                if event.type == MOVE_EVENT:
+                if event.type == MOVE_EVENT and not game_over:
                     next_head = wrap_pos(snake[0][0] + direction[0], snake[0][1] + direction[1])
                     ate = (food is not None) and (next_head == food)
-                    snake = move_snake(snake, direction, grow=ate)
-                    if ate:
-                        score += 1
-                        food = spawn_food(set(snake))
+                    new_snake = move_snake(snake, direction, grow=ate)
+
+                    # Self-collision: head overlaps any body segment
+                    if next_head in new_snake[1:]:
+                        game_over = True
+                    else:
+                        snake = new_snake
+                        if ate:
+                            score += 1
+                            food = spawn_food(set(snake))
 
             # Render
-            render(screen, snake, food, score, font)
+            render(screen, snake, food, score, font, game_over)
 
             clock.tick(FPS)
         return 0
