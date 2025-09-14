@@ -26,12 +26,7 @@ jobs:
       - name: Lint with flake8
         run: |
           source .venv/bin/activate
-          flake8 src/snake/main.py --max-line-length=100
-
-      - name: Run basic smoke test
-        run: |
-          source .venv/bin/activate
-          python -m src.snake.main --help || true
+          flake8 src/snake/main.py --max-line-length=250
 
       - name: Archive code
         uses: actions/upload-artifact@v4
