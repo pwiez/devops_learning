@@ -1,6 +1,15 @@
-# Snake (Step 1/5): Project Scaffold
+# Snake Game (Python, Pygame)
 
-This is step 1 of a simple Snake game in Python using `pygame`.
+A simple grid-based Snake game in Python using Pygame. 
+
+## Features
+- Arrow keys or WASD to move
+- Eat food to grow and score points
+- Self-collision ends the game
+- Press P to pause/unpause
+- Press R, Enter, or Space to restart after game over
+- Press Esc or Q to quit
+- Toroidal (wrap-around) playfield
 
 ## Setup
 
@@ -18,8 +27,23 @@ pip install -r requirements.txt
 python -m src.snake.main
 ```
 
-You should see a window titled "Snake" with a black background. Close the window or press `Esc`/`Q` to quit.
+## Packaging/Distribution
+- All code is in `src/snake/main.py`.
+- No external assets required.
+- To package, zip the `src/` folder and `requirements.txt`.
 
-## Next steps
+## Controls
+- Arrow keys / WASD: Move
+- P: Pause/Unpause
+- R / Enter / Space: Restart after game over
+- Esc / Q: Quit
 
-- Step 2 will add basic snake movement.
+## How to Play
+- Steer the snake to eat red food squares.
+- Each food eaten grows the snake and increases your score.
+- Avoid running into yourself!
+- The game wraps at the edges.
+- After game over, press R, Enter, or Space to restart.
+
+## License
+MIT

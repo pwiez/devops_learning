@@ -1,6 +1,15 @@
 import sys
 import random
 import pygame
+from typing import List, Tuple, Optional
+
+"""
+Snake Game Controls:
+- Arrow keys or WASD: Move
+- P: Pause/Unpause
+- R/Enter/Space: Restart after game over
+- Esc/Q: Quit
+"""
 
 # Window settings
 WIDTH, HEIGHT = 640, 480
@@ -15,6 +24,7 @@ HEAD_COLOR = (120, 255, 140)
 FOOD_COLOR = (240, 80, 80)
 HUD_COLOR = (230, 230, 230)
 GAME_OVER_COLOR = (255, 90, 90)
+PAUSE_COLOR = (180, 180, 255)
 
 # Movement timing (game ticks per second)
 TICKS_PER_SECOND = 8
@@ -22,17 +32,18 @@ MOVE_EVENT = pygame.USEREVENT + 1
 MOVE_INTERVAL_MS = int(1000 / TICKS_PER_SECOND)
 
 # Directions as (dx, dy) on the grid
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
+UP: Tuple[int, int] = (0, -1)
+DOWN: Tuple[int, int] = (0, 1)
+LEFT: Tuple[int, int] = (-1, 0)
+RIGHT: Tuple[int, int] = (1, 0)
 
 
-def handle_events(direction, game_over=False):
-    """Process input events; return (keep_running, new_direction, restart)."""
+def handle_events(direction: Tuple[int, int], game_over: bool = False, paused: bool = False) -> Tuple[bool, Tuple[int, int], bool, bool]:
+    """Process input events; return (keep_running, new_direction, restart, pause_toggle)."""
     new_dir = direction
     keep_running = True
     restart = False
+    pause_toggle = False
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -43,7 +54,9 @@ def handle_events(direction, game_over=False):
             if game_over:
                 if event.key in (pygame.K_r, pygame.K_SPACE, pygame.K_RETURN):
                     restart = True
-            else:
+            elif event.key == pygame.K_p:
+                pause_toggle = True
+            elif not paused:
                 # Arrow keys
                 if event.key == pygame.K_UP:
                     new_dir = choose_direction(new_dir, UP)
@@ -62,22 +75,22 @@ def handle_events(direction, game_over=False):
                     new_dir = choose_direction(new_dir, LEFT)
                 elif event.key == pygame.K_d:
                     new_dir = choose_direction(new_dir, RIGHT)
-    return keep_running, new_dir, restart
+    return keep_running, new_dir, restart, pause_toggle
 
 
-def choose_direction(current, attempted):
+def choose_direction(current: Tuple[int, int], attempted: Tuple[int, int]) -> Tuple[int, int]:
     """Prevent reversing into itself by disallowing exact opposite direction."""
     if (current[0] + attempted[0] == 0) and (current[1] + attempted[1] == 0):
         return current
     return attempted
 
 
-def wrap_pos(x, y):
+def wrap_pos(x: int, y: int) -> Tuple[int, int]:
     """Wrap position around screen grid (toroidal wrapping)."""
     return x % GRID_COLS, y % GRID_ROWS
 
 
-def move_snake(snake, direction, grow=False):
+def move_snake(snake: List[Tuple[int, int]], direction: Tuple[int, int], grow: bool = False) -> List[Tuple[int, int]]:
     """Move snake: returns new list of segments; if grow, keep tail."""
     head_x, head_y = snake[0]
     dx, dy = direction
@@ -87,7 +100,7 @@ def move_snake(snake, direction, grow=False):
     return [new_head] + snake[:-1]
 
 
-def spawn_food(occupied):
+def spawn_food(occupied: set) -> Optional[Tuple[int, int]]:
     """Spawn food at a random free cell not in occupied set."""
     free_cells = [(x, y) for x in range(GRID_COLS) for y in range(GRID_ROWS) if (x, y) not in occupied]
     if not free_cells:
@@ -95,13 +108,13 @@ def spawn_food(occupied):
     return random.choice(free_cells)
 
 
-def draw_cell(surface, cell, color):
+def draw_cell(surface: pygame.Surface, cell: Tuple[int, int], color: Tuple[int, int, int]) -> None:
     x, y = cell
     rect = pygame.Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE)
     pygame.draw.rect(surface, color, rect)
 
 
-def render(screen, snake, food, score, font, game_over=False):
+def render(screen: pygame.Surface, snake: List[Tuple[int, int]], food: Optional[Tuple[int, int]], score: int, font: pygame.font.Font, game_over: bool = False, paused: bool = False) -> None:
     screen.fill(BG_COLOR)
     # Draw food
     if food is not None:
@@ -112,11 +125,15 @@ def render(screen, snake, food, score, font, game_over=False):
     # Draw head
     draw_cell(screen, snake[0], HEAD_COLOR)
 
-    # HUD: score top-left
+    # HUD: score top-left, pause/game over center
     hud = font.render(f"Score: {score}", True, HUD_COLOR)
     screen.blit(hud, (8, 6))
 
-    if game_over:
+    if paused:
+        pause_text = font.render("Paused - Press P", True, PAUSE_COLOR)
+        rect = pause_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(pause_text, rect)
+    elif game_over:
         over_text = font.render("Game Over - Press R/Enter/Space", True, GAME_OVER_COLOR)
         rect = over_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         screen.blit(over_text, rect)
@@ -124,8 +141,8 @@ def render(screen, snake, food, score, font, game_over=False):
     pygame.display.flip()
 
 
-def init_game_state():
-    # Initialize snake centered, length 4, heading right
+def init_game_state() -> Tuple[List[Tuple[int, int]], Tuple[int, int], Optional[Tuple[int, int]], int]:
+    """Initialize snake, direction, food, and score."""
     start_x, start_y = GRID_COLS // 2, GRID_ROWS // 2
     snake = [
         (start_x, start_y),
@@ -140,6 +157,7 @@ def init_game_state():
 
 
 def main() -> int:
+    """Main game loop."""
     pygame.init()
     try:
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -149,20 +167,24 @@ def main() -> int:
 
         snake, direction, food, score = init_game_state()
         game_over = False
+        paused = False
 
         # Timed movement
         pygame.time.set_timer(MOVE_EVENT, MOVE_INTERVAL_MS)
 
         running = True
         while running:
-            running, direction, restart = handle_events(direction, game_over)
+            running, direction, restart, pause_toggle = handle_events(direction, game_over, paused)
             if restart and game_over:
                 snake, direction, food, score = init_game_state()
                 game_over = False
+                paused = False
+            if pause_toggle and not game_over:
+                paused = not paused
 
             # Tick-based update
             for event in pygame.event.get([MOVE_EVENT]):
-                if event.type == MOVE_EVENT and not game_over:
+                if event.type == MOVE_EVENT and not game_over and not paused:
                     next_head = wrap_pos(snake[0][0] + direction[0], snake[0][1] + direction[1])
                     ate = (food is not None) and (next_head == food)
                     new_snake = move_snake(snake, direction, grow=ate)
@@ -177,7 +199,7 @@ def main() -> int:
                             food = spawn_food(set(snake))
 
             # Render
-            render(screen, snake, food, score, font, game_over)
+            render(screen, snake, food, score, font, game_over, paused)
 
             clock.tick(FPS)
         return 0
