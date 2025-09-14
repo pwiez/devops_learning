@@ -174,7 +174,45 @@ def main() -> int:
 
         running = True
         while running:
-            running, direction, restart, pause_toggle = handle_events(direction, game_over, paused)
+            # Process all events in one loop
+            move_tick = False
+            new_dir = direction
+            restart = False
+            pause_toggle = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_ESCAPE, pygame.K_q):
+                        running = False
+                    if game_over:
+                        if event.key in (pygame.K_r, pygame.K_SPACE, pygame.K_RETURN):
+                            restart = True
+                    elif event.key == pygame.K_p:
+                        pause_toggle = True
+                    elif not paused:
+                        # Arrow keys
+                        if event.key == pygame.K_UP:
+                            new_dir = choose_direction(new_dir, UP)
+                        elif event.key == pygame.K_DOWN:
+                            new_dir = choose_direction(new_dir, DOWN)
+                        elif event.key == pygame.K_LEFT:
+                            new_dir = choose_direction(new_dir, LEFT)
+                        elif event.key == pygame.K_RIGHT:
+                            new_dir = choose_direction(new_dir, RIGHT)
+                        # WASD
+                        elif event.key == pygame.K_w:
+                            new_dir = choose_direction(new_dir, UP)
+                        elif event.key == pygame.K_s:
+                            new_dir = choose_direction(new_dir, DOWN)
+                        elif event.key == pygame.K_a:
+                            new_dir = choose_direction(new_dir, LEFT)
+                        elif event.key == pygame.K_d:
+                            new_dir = choose_direction(new_dir, RIGHT)
+                elif event.type == MOVE_EVENT:
+                    move_tick = True
+
+            direction = new_dir
             if restart and game_over:
                 snake, direction, food, score = init_game_state()
                 game_over = False
@@ -183,20 +221,19 @@ def main() -> int:
                 paused = not paused
 
             # Tick-based update
-            for event in pygame.event.get([MOVE_EVENT]):
-                if event.type == MOVE_EVENT and not game_over and not paused:
-                    next_head = wrap_pos(snake[0][0] + direction[0], snake[0][1] + direction[1])
-                    ate = (food is not None) and (next_head == food)
-                    new_snake = move_snake(snake, direction, grow=ate)
+            if move_tick and not game_over and not paused:
+                next_head = wrap_pos(snake[0][0] + direction[0], snake[0][1] + direction[1])
+                ate = (food is not None) and (next_head == food)
+                new_snake = move_snake(snake, direction, grow=ate)
 
-                    # Self-collision: head overlaps any body segment
-                    if next_head in new_snake[1:]:
-                        game_over = True
-                    else:
-                        snake = new_snake
-                        if ate:
-                            score += 1
-                            food = spawn_food(set(snake))
+                # Self-collision: head overlaps any body segment
+                if next_head in new_snake[1:]:
+                    game_over = True
+                else:
+                    snake = new_snake
+                    if ate:
+                        score += 1
+                        food = spawn_food(set(snake))
 
             # Render
             render(screen, snake, food, score, font, game_over, paused)
