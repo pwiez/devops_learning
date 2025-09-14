@@ -1,16 +1,19 @@
 import sys
+import random
 import pygame
 
 # Window settings
 WIDTH, HEIGHT = 640, 480
 TITLE = "Snake"
-FPS = 1  # render FPS
+FPS = 30  # render FPS (raised for smoother draw)
 BG_COLOR = (20, 20, 20)
 GRID_SIZE = 20  # pixels per cell
 GRID_COLS = WIDTH // GRID_SIZE
 GRID_ROWS = HEIGHT // GRID_SIZE
 SNAKE_COLOR = (80, 220, 100)
 HEAD_COLOR = (120, 255, 140)
+FOOD_COLOR = (240, 80, 80)
+HUD_COLOR = (230, 230, 230)
 
 # Movement timing (game ticks per second)
 TICKS_PER_SECOND = 8
@@ -68,13 +71,22 @@ def wrap_pos(x, y):
     return x % GRID_COLS, y % GRID_ROWS
 
 
-def move_snake(snake, direction):
-    """Move snake: returns new list of segments with updated head and tail removed."""
+def move_snake(snake, direction, grow=False):
+    """Move snake: returns new list of segments; if grow, keep tail."""
     head_x, head_y = snake[0]
     dx, dy = direction
     new_head = wrap_pos(head_x + dx, head_y + dy)
-    new_snake = [new_head] + snake[:-1]
-    return new_snake
+    if grow:
+        return [new_head] + snake
+    return [new_head] + snake[:-1]
+
+
+def spawn_food(occupied):
+    """Spawn food at a random free cell not in occupied set."""
+    free_cells = [(x, y) for x in range(GRID_COLS) for y in range(GRID_ROWS) if (x, y) not in occupied]
+    if not free_cells:
+        return None
+    return random.choice(free_cells)
 
 
 def draw_cell(surface, cell, color):
@@ -83,13 +95,21 @@ def draw_cell(surface, cell, color):
     pygame.draw.rect(surface, color, rect)
 
 
-def render(screen, snake):
+def render(screen, snake, food, score, font):
     screen.fill(BG_COLOR)
+    # Draw food
+    if food is not None:
+        draw_cell(screen, food, FOOD_COLOR)
     # Draw body
     for segment in snake[1:]:
         draw_cell(screen, segment, SNAKE_COLOR)
     # Draw head
     draw_cell(screen, snake[0], HEAD_COLOR)
+
+    # HUD: score top-left
+    hud = font.render(f"Score: {score}", True, HUD_COLOR)
+    screen.blit(hud, (8, 6))
+
     pygame.display.flip()
 
 
@@ -99,6 +119,7 @@ def main() -> int:
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption(TITLE)
         clock = pygame.time.Clock()
+        font = pygame.font.SysFont(None, 24)
 
         # Initialize snake centered, length 4, heading right
         start_x, start_y = GRID_COLS // 2, GRID_ROWS // 2
@@ -110,6 +131,10 @@ def main() -> int:
         ]
         direction = RIGHT
 
+        # Food and score
+        food = spawn_food(set(snake))
+        score = 0
+
         # Timed movement
         pygame.time.set_timer(MOVE_EVENT, MOVE_INTERVAL_MS)
 
@@ -120,10 +145,15 @@ def main() -> int:
             # Tick-based update
             for event in pygame.event.get([MOVE_EVENT]):
                 if event.type == MOVE_EVENT:
-                    snake = move_snake(snake, direction)
+                    next_head = wrap_pos(snake[0][0] + direction[0], snake[0][1] + direction[1])
+                    ate = (food is not None) and (next_head == food)
+                    snake = move_snake(snake, direction, grow=ate)
+                    if ate:
+                        score += 1
+                        food = spawn_food(set(snake))
 
             # Render
-            render(screen, snake)
+            render(screen, snake, food, score, font)
 
             clock.tick(FPS)
         return 0
