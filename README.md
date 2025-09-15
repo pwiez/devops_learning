@@ -1,14 +1,4 @@
-# Snake Game (Python, Text-Based)
-
 A simple Snake game for the terminal, implemented in Python (using curses). No graphics required—runs in any terminal or Docker container.
-
-## Features
-- Play directly in your terminal
-- Arrow keys or WASD to move
-- Eat food (*) to grow and score points
-- Self-collision ends the game
-- Q to quit
-- Works in Docker (no graphical dependencies)
 
 ## Setup
 
@@ -40,12 +30,6 @@ docker run --rm -it snake-text
 ## Controls
 - Arrow keys or WASD: Move
 - Q: Quit
-
-## How to Play
-- Steer the snake (@ for head, O for body) to eat food (*) and grow.
-- Avoid running into yourself!
-- The game wraps at the edges.
-- After game over, press any key to exit.
 
 ## License
 MIT
