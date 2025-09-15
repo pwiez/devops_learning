@@ -14,6 +14,7 @@ RIGHT = (1, 0)
 DIRECTIONS = {curses.KEY_UP: UP, curses.KEY_DOWN: DOWN, curses.KEY_LEFT: LEFT, curses.KEY_RIGHT: RIGHT,
               ord('w'): UP, ord('s'): DOWN, ord('a'): LEFT, ord('d'): RIGHT}
 
+
 def spawn_food(occupied):
     free = [(x, y) for x in range(WIDTH) for y in range(HEIGHT) if (x, y) not in occupied]
     return random.choice(free)
@@ -79,3 +80,4 @@ def main(stdscr):
 
 if __name__ == "__main__":
     curses.wrapper(main)
+    
