@@ -26,7 +26,7 @@ jobs:
       - name: Lint with flake8
         run: |
           source .venv/bin/activate
-          flake8 **.py --max-line-length=250
+          flake8 src/snake/text_snake.py --max-line-length=250
 
       - name: Archive code
         uses: actions/upload-artifact@v4
