@@ -1,8 +1,7 @@
 import curses
 import random
-import time
 
-WIDTH, HEIGHT = 20, 12  # grid size
+WIDTH, HEIGHT = 20, 12
 SNAKE_CHAR = 'O'
 FOOD_CHAR = '*'
 EMPTY_CHAR = ' '
@@ -14,7 +13,6 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 DIRECTIONS = {curses.KEY_UP: UP, curses.KEY_DOWN: DOWN, curses.KEY_LEFT: LEFT, curses.KEY_RIGHT: RIGHT,
               ord('w'): UP, ord('s'): DOWN, ord('a'): LEFT, ord('d'): RIGHT}
-
 
 def spawn_food(occupied):
     free = [(x, y) for x in range(WIDTH) for y in range(HEIGHT) if (x, y) not in occupied]
@@ -53,14 +51,14 @@ def main(stdscr):
     while not game_over:
         draw_grid(stdscr, snake, food, score)
         key = stdscr.getch()
+
         if key in DIRECTIONS:
             new_dir = DIRECTIONS[key]
-            # Prevent reversing
             if (direction[0] + new_dir[0], direction[1] + new_dir[1]) != (0, 0):
                 direction = new_dir
         elif key in [ord('q'), ord('Q')]:
             break
-        # Move snake
+
         hx, hy = snake[0]
         dx, dy = direction
         nx, ny = (hx + dx) % WIDTH, (hy + dy) % HEIGHT
@@ -77,6 +75,7 @@ def main(stdscr):
             food = spawn_food(set(snake))
         else:
             snake.pop()
+
 
 if __name__ == "__main__":
     curses.wrapper(main)
