@@ -1,1 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+
+# macOS
 .DS_Store
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Test and coverage
+htmlcov/
+.coverage
+*.cover
+*.py,cover
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+*.whl
+*.manifest
+*.spec
+
+# Docker
+*.pid
+
+# Misc
+*.swp
+*.swo
