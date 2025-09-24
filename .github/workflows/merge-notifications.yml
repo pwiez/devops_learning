@@ -19,6 +19,7 @@ jobs:
           echo "commit_date=$(git log -1 --pretty=format:'%cd' --date=short)" >> $GITHUB_OUTPUT
           echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l)" >> $GITHUB_OUTPUT
       - name: Discord Notification - Commit to Main
+        if: !contains(git log -1 --pretty=format:'%s', 'Merge pull request')
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -37,3 +38,38 @@ jobs:
             📦 **Arquivos alterados:** ${{ steps.commit-info.outputs.files_changed }}
             
             🔗 [Ver commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+  notify-merge-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Get commit info
+        id: commit-info
+        run: |
+          echo "commit_message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+          echo "commit_author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+          echo "commit_date=$(git log -1 --pretty=format:'%cd' --date=short)" >> $GITHUB_OUTPUT
+          echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l)" >> $GITHUB_OUTPUT
+          echo "pr_number=$(git log -1 --pretty=format:'%s' | grep -o '#[0-9]\+' | head -1 | sed 's/#//')" >> $GITHUB_OUTPUT
+      - name: Discord Notification - Merge PR to Main
+        if: contains(git log -1 --pretty=format:'%s', 'Merge pull request')
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: |
+            🎉 **PR mergeado na main!**
+            
+            **Repositório:** ${{ github.repository }}
+            **Autor do merge:** ${{ steps.commit-info.outputs.commit_author }}
+            **Data:** ${{ steps.commit-info.outputs.commit_date }}
+            
+            **Mensagem do commit:**
+            `${{ steps.commit-info.outputs.commit_message }}`
+            
+            📝 **Hash:** `${{ github.sha }}`
+            📦 **Arquivos alterados:** ${{ steps.commit-info.outputs.files_changed }}
+            
+            🔗 [Ver commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            📋 [Ver PR](${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.commit-info.outputs.pr_number }})
