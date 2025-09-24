@@ -104,3 +104,37 @@ jobs:
             
             🔗 [Ver commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
             📋 [Ver PR](${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.commit-info.outputs.pr_number }})
+      - name: Discord Notification - CI Pipeline Successful (PR)
+        if: github.event_name == 'pull_request' && success()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: |
+            ✅ **CI Pipeline Successful**
+            
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.head_ref }}
+            **Commit:** `${{ github.sha }}`
+            **Author:** ${{ github.actor }}
+            **Event:** ${{ github.event_name }}
+            
+            📊 All tests passed and code quality checks successful!
+            🔗 [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+      - name: Discord Notification - CI Pipeline Successful (Push)
+        if: github.event_name == 'push' && success()
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: |
+            ✅ **CI Pipeline Successful**
+            
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** `${{ github.sha }}`
+            **Author:** ${{ github.actor }}
+            **Event:** ${{ github.event_name }}
+            
+            📊 All tests passed and code quality checks successful!
+            🔗 [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
