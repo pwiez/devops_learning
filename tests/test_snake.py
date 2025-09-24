@@ -1,24 +1,18 @@
 """
 Testes unitários para o jogo Snake
 """
-import pytest
-import sys
 import os
-from unittest.mock import patch, MagicMock
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from snake.text_snake import (
-    spawn_food,
-    WIDTH,
-    HEIGHT,
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    DIRECTIONS,
-)
 import curses
+
+from snake.text_snake import (DIRECTIONS, DOWN, HEIGHT, LEFT, RIGHT, UP, WIDTH,
+                              spawn_food)
 
 
 class TestSpawnFood:
@@ -192,7 +186,8 @@ class TestGameConstants:
 
     def test_character_constants(self):
         """Testa se os caracteres do jogo estão definidos"""
-        from snake.text_snake import SNAKE_CHAR, FOOD_CHAR, EMPTY_CHAR, HEAD_CHAR
+        from snake.text_snake import (EMPTY_CHAR, FOOD_CHAR, HEAD_CHAR,
+                                      SNAKE_CHAR)
 
         assert isinstance(SNAKE_CHAR, str)
         assert isinstance(FOOD_CHAR, str)
