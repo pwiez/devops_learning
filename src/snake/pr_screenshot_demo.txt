@@ -1,0 +1,1 @@
+Arquivo criado para demonstrar execução dos testes unitários em uma Pull Request para screenshot.
