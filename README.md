@@ -31,5 +31,24 @@ docker run --rm -it snake-text
 - Arrow keys or WASD: Move
 - Q: Quit
 
+## Development
+
+### Running Tests
+
+Install development dependencies:
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run tests:
+```bash
+pytest tests/ -v
+```
+
+Run tests with coverage:
+```bash
+pytest tests/ --cov=src --cov-report=term
+```
+
 ## License
 MIT

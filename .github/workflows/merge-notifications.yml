@@ -1,0 +1,71 @@
+name: Merge Notifications
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  notify-merge:
+    runs-on: ubuntu-latest
+    if: github.event.commits[0].message != github.event.head_commit.message || contains(github.event.head_commit.message, 'Merge pull request')
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+    
+    - name: Get commit info
+      id: commit-info
+      run: |
+        echo "commit_message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+        echo "commit_author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+        echo "commit_date=$(git log -1 --pretty=format:'%cd' --date=short)" >> $GITHUB_OUTPUT
+        echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l)" >> $GITHUB_OUTPUT
+        
+        # Detecta se é um merge de PR
+        if [[ "$(git log -1 --pretty=format:'%s')" == *"Merge pull request"* ]]; then
+          echo "is_merge=true" >> $GITHUB_OUTPUT
+          PR_NUMBER=$(git log -1 --pretty=format:'%s' | grep -o '#[0-9]\+' | head -1 | sed 's/#//')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        else
+          echo "is_merge=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Discord Notification - New Merge to Main
+      if: steps.commit-info.outputs.is_merge == 'true'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🎉 **Pull Request Merged to Main!**
+          
+          **Repository:** ${{ github.repository }}
+          **PR #:** ${{ steps.commit-info.outputs.pr_number }}
+          **Merged by:** ${{ steps.commit-info.outputs.commit_author }}
+          **Date:** ${{ steps.commit-info.outputs.commit_date }}
+          
+          📝 **Commit:** `${{ github.sha }}`
+          📊 **Files changed:** ${{ steps.commit-info.outputs.files_changed }}
+          
+          🔗 [View Commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+          📋 [View PR](${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.commit-info.outputs.pr_number }})
+
+    - name: Discord Notification - Direct Push to Main
+      if: steps.commit-info.outputs.is_merge == 'false'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          📦 **Direct Push to Main Branch**
+          
+          **Repository:** ${{ github.repository }}
+          **Author:** ${{ steps.commit-info.outputs.commit_author }}
+          **Date:** ${{ steps.commit-info.outputs.commit_date }}
+          
+          💬 **Message:** ${{ steps.commit-info.outputs.commit_message }}
+          📝 **Commit:** `${{ github.sha }}`
+          📊 **Files changed:** ${{ steps.commit-info.outputs.files_changed }}
+          
+          🔗 [View Commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
