@@ -2,21 +2,31 @@ import curses
 import random
 
 WIDTH, HEIGHT = 20, 12
-SNAKE_CHAR = 'O'
-FOOD_CHAR = '*'
-EMPTY_CHAR = ' '
-HEAD_CHAR = '@'
+SNAKE_CHAR = "O"
+FOOD_CHAR = "*"
+EMPTY_CHAR = " "
+HEAD_CHAR = "@"
 
 UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
-DIRECTIONS = {curses.KEY_UP: UP, curses.KEY_DOWN: DOWN, curses.KEY_LEFT: LEFT, curses.KEY_RIGHT: RIGHT,
-              ord('w'): UP, ord('s'): DOWN, ord('a'): LEFT, ord('d'): RIGHT}
+DIRECTIONS = {
+    curses.KEY_UP: UP,
+    curses.KEY_DOWN: DOWN,
+    curses.KEY_LEFT: LEFT,
+    curses.KEY_RIGHT: RIGHT,
+    ord("w"): UP,
+    ord("s"): DOWN,
+    ord("a"): LEFT,
+    ord("d"): RIGHT,
+}
 
 
 def spawn_food(occupied):
-    free = [(x, y) for x in range(WIDTH) for y in range(HEIGHT) if (x, y) not in occupied]
+    free = [
+        (x, y) for x in range(WIDTH) for y in range(HEIGHT) if (x, y) not in occupied
+    ]
     return random.choice(free)
 
 
@@ -24,7 +34,7 @@ def draw_grid(stdscr, snake, food, score):
     stdscr.clear()
     stdscr.addstr(0, 0, f"Score: {score}")
     for y in range(HEIGHT):
-        row = ''
+        row = ""
         for x in range(WIDTH):
             if (x, y) == snake[0]:
                 row += HEAD_CHAR
@@ -43,7 +53,11 @@ def main(stdscr):
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.timeout(150)
-    snake = [(WIDTH // 2, HEIGHT // 2), (WIDTH // 2 - 1, HEIGHT // 2), (WIDTH // 2 - 2, HEIGHT // 2)]
+    snake = [
+        (WIDTH // 2, HEIGHT // 2),
+        (WIDTH // 2 - 1, HEIGHT // 2),
+        (WIDTH // 2 - 2, HEIGHT // 2),
+    ]
     direction = RIGHT
     food = spawn_food(set(snake))
     score = 0
@@ -57,7 +71,7 @@ def main(stdscr):
             new_dir = DIRECTIONS[key]
             if (direction[0] + new_dir[0], direction[1] + new_dir[1]) != (0, 0):
                 direction = new_dir
-        elif key in [ord('q'), ord('Q')]:
+        elif key in [ord("q"), ord("Q")]:
             break
 
         hx, hy = snake[0]
