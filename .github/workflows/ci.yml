@@ -64,7 +64,7 @@ jobs:
           echo "files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l)" >> $GITHUB_OUTPUT
           echo "pr_number=$(git log -1 --pretty=format:'%s' | grep -o '#[0-9]\+' | head -1 | sed 's/#//')" >> $GITHUB_OUTPUT
       - name: Discord Notification - Commit to Main
-        if: github.event_name == 'push' && !contains(git log -1 --pretty=format:'%s', 'Merge pull request')
+        if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'Merge pull request')
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -84,7 +84,7 @@ jobs:
             
             🔗 [Ver commit](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
       - name: Discord Notification - Merge PR to Main
-        if: github.event_name == 'push' && contains(git log -1 --pretty=format:'%s', 'Merge pull request')
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Merge pull request')
         uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
